@@ -1,7 +1,10 @@
 # Starport-Poll
 
 Tools used:
-1. `Starport` -> For generating, serving and scaffolding the application.
+
+## Starport
+
+`Starport` -> For generating, serving and scaffolding the application.
 
 `starport app github.com/GITHUB-USERNAME/APP-NAME` to scaffold the application.
 
@@ -40,3 +43,20 @@ Going back to `MsgCreatePoll.go`, we need to make options to be stored as a list
 This command will generate a transaction with "create poll" message, sign it using a private key of `user1` (one of two users created by default) and broadcast it to the blockchain.
 
 The only modification we need to make is to change a line that reads arguments from the console: `argsOptions := args[1:len(args)]`. This will assume that all arguments after the first one represent a list of options.
+
+## Front-end application
+
+Starport has generated a basic front-end for our application. For convenience Vue.js framework is used with Vuex for state management, but since all features of our application are exposed through an HTTP API, clients can be built using any language or framework.
+
+We'll be mostly interested in `vue/src/views` directory, which contains page templates of our app, `vue/src/store/index.js` handles sending transactions and receiving data from our blockchain and `vue/src/components` directory, which contains components, like buttons and forms.
+
+Inside `vue/src/store/index.js` we import CosmJS, a library for handling wallets, creating, signing and broadcasting transactions and define a Vuex store. We'll use `entitySubmit` function for sending data to our blockchain (like a JSON representing a newly created poll), `entityFetch` for requesting a list of polls and `accountUpdate` to fetch information about our token balance.
+
+`frontend/src/view/Index.vue`
+
+Since we don't need the default form component replace `<type-list />` inside of `vue/src/views/Index.vue` with a new component `<poll-form />` that will be created in a new file at `vue/src/components/PollForm.vue`.
+
+Poll form component has an input for title and a list of inputs for options. Clicking "Add option" button adds an empty input and clicking "Create poll" sends, creates and broadcasts a transaction with a "create poll" message.
+
+Refresh the page, sign in with a password and create a new poll. It takes a couple of seconds to process a transaction. Now, if you visit `http://localhost:1317/voter/poll `you should see a list of poll (this endpoint is defined in `x/poll/rest/queryPoll.go`).
+

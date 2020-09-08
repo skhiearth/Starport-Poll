@@ -25,6 +25,8 @@ This generates several files for us in `x/types/poll`
 
 `x/poll/types/MsgCreatePoll.go` -> This file defines a message that creates a poll.
 
+![alt text][transactionFlow.png]
+
 To write anything to a blockchain or perform any other state transition a client (web app in our case) makes an HTTP POST request with a title and options to `http://localhost:1317/voter/poll` endpoint handler for which is defined in `x/poll/client/rest/txPoll.go`. The handler creates an unsigned transaction which contains an array of messages. The client then signs the transaction and sends it to `http://localhost:1317/txs`. The application then processes the transaction by sending each message to a corresponding handler, in our case `x/poll/handlerMessageCreatePoll.go`. A handler then calls a `CreatePoll` function defined in `x/voter/keeper/poll.go` which writes the poll data into the store.
 
 Going back to `MsgCreatePoll.go`, we need to make options to be stored as a list instead of a string. Replace `Options string` with `Options []string` in `MsgCreatePoll` struct and `options string` with `options []string` in the arguments of `NewMsgCreatePoll` function.

@@ -8,7 +8,7 @@ Tools used:
 In the app directory;
 1. `app/app.go` is the main file of our application, ties together all modules and permissions.
 2. `cmd` directory with two directories for CLI (Interacting with application) commands and d (Node) commands.
-3. `vue` directory for web based view client. We can use any framework we want. The default framework used if `Vue.js`
+3. `frontend` directory for web based view client. We can use any framework we want. The default framework used if `Vue.js`
 4. `x` directory containing customer modules.
 
 `starport serve` to run the application.

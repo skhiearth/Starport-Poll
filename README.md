@@ -60,3 +60,54 @@ Poll form component has an input for title and a list of inputs for options. Cli
 
 Refresh the page, sign in with a password and create a new poll. It takes a couple of seconds to process a transaction. Now, if you visit `http://localhost:1317/voter/poll `you should see a list of poll (this endpoint is defined in `x/poll/rest/queryPoll.go`).
 
+## Adding votes
+
+A vote type contains poll ID and a value (string representation of the selected option).
+
+`starport type vote pollID value`
+
+`vue/src/views/Index.vue`:
+
+Add `<poll-list />` into the `vue/src/view/Index.vue` file after the poll form component. Then make a new component at `vue/src/components/PollList.vue`.
+
+The `PollList` component lists for every poll, all the options for that poll, as buttons. Selecting an option triggers a `submit` method that broadcasts a transaction with a "create vote" message and fetches data back from our application.
+
+Try creating polls and casting votes. You may notice that it's possible to cast multiple votes for one poll. This is not what we want, so let's fix this behaviour.
+
+## Casting votes only once
+
+To fix this issue we first have to understand how data is stored in our application.
+
+We can think of our data storage as a lexicographically ordered key value store. You can loop through the entries, filter by key prefix, add, update and delete entries.
+
+Both `poll-` and `vote-` are prefixes. They are added to keys for ease of filtering. By convention, prefixes are defined in `x/poll/key.go`.
+
+Whenever a user casts a vote, a new "create vote" message is handled by a handler and is passed to a keeper. Keeper takes a `vote-` prefix, adds a UUID (unique to every message) and uses this string as a key. `x/poll/keeper/vote.go`:
+
+`key := []byte(types.VotePrefix + vote.ID)`
+
+These strings are unique and we get duplicate votes. To fix that we need to make sure a keeper records every vote only once by choosing the right key. In our case, we can use poll ID and creator address to make sure that one user can cast only one vote per poll.
+
+`key := []byte(types.VotePrefix + vote.PollID + "-" + string(vote.Creator))`
+
+Restart the application and try voting multiple times on a single poll, you'll see you can vote as many times as you want but only your most recent vote is counted.
+
+## Introducing a fee for creating polls
+
+Let's make it so that creating a poll costs 200 tokens.
+
+This feature is very easy to add. We already require users to have accounts registered, and each user has tokens on balance. The only thing we need to do is to send coins from user's account to a module account before we create a poll.
+
+`x/poll/handlerMsgCreatePoll.go`:
+
+```go
+moduleAcct := sdk.AccAddress(crypto.AddressHash([]byte(types.ModuleName)))
+payment, _ := sdk.ParseCoins("200token")
+if err := k.CoinKeeper.SendCoins(ctx, poll.Creator, moduleAcct, payment); err != nil {
+	return nil, err
+}
+```
+
+Add the code above before `k.CreatePoll(ctx, poll)`. This way, if a user does not have enough tokens, the application will raise an error and will not proceed to creating a poll. Make sure to add `"[github.com/tendermint/tendermint/crypto](http://github.com/tendermint/tendermint/crypto)"` to the import statement (if your text editor didn't do that for you).
+
+Now, restart the app and try creating several polls to see how this affects your token balance.

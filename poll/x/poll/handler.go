@@ -15,6 +15,8 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
     // this line is used by starport scaffolding
+		case types.MsgCreateVote:
+			return handleMsgCreateVote(ctx, k, msg)
 		case types.MsgCreatePoll:
 			return handleMsgCreatePoll(ctx, k, msg)
 		default:
